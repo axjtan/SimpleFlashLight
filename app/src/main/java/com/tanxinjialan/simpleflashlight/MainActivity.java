@@ -2,10 +2,12 @@ package com.tanxinjialan.simpleflashlight;
 
 import android.content.DialogInterface;
 import android.content.pm.PackageManager;
-import android.hardware.Camera;
+import android.hardware.camera2.CameraAccessException;
+import android.hardware.camera2.CameraManager;
+import android.os.Build;
+import android.os.Bundle;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.util.Log;
 import android.widget.CompoundButton;
 import android.widget.ToggleButton;
@@ -13,21 +15,21 @@ import android.widget.ToggleButton;
 
 public class MainActivity extends AppCompatActivity {
 
-    private android.hardware.Camera camera;
+    private CameraManager cameraManager;
+    private String cameraId;
     private boolean isFlashOn;
-    private boolean hasFlash;
-    android.hardware.Camera.Parameters param;
 
-    @SuppressWarnings("deprecation")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
         // First check if device is supporting flashlight or not
-        hasFlash = getApplicationContext().getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA_FLASH);
+        boolean hasFlash = getApplicationContext().getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA_FLASH);
+
+        // Check for device with or without Flash function
         if (!hasFlash) {
-            // device doesnt support flash
+            // If device doesn't support flash
             // Show alert message and close the application
             AlertDialog alert = new AlertDialog.Builder(MainActivity.this).create();
             alert.setTitle("Error");
@@ -38,60 +40,61 @@ public class MainActivity extends AppCompatActivity {
                 public void onClick(DialogInterface dialog, int which) {
                     // Closing the application
                     finish();
+                    System.exit(0);
                 }
             });
             alert.show();
             return;
         }
+        //
+
         getCamera();
+
         ToggleButton flashSwitch = (ToggleButton) findViewById(R.id.flash_switch);
         flashSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if (isChecked)  turnOnFlash();
-                else            turnOffFlash();
+                if (isChecked) turnOnFlash();
+                else turnOffFlash();
             }
         });
     }
+
     private void getCamera() {
-        if (camera == null) {
-            try {
-                camera = android.hardware.Camera.open();
-                param = camera.getParameters();
-            } catch (RuntimeException e) {
-                Log.e(e.getMessage(), "Camera Error. Failed to Open. Error:");
-            }
+        cameraManager = (CameraManager) getSystemService(CAMERA_SERVICE);
+        try {
+            cameraId = cameraManager.getCameraIdList()[0];
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
         }
     }
 
     // Turning On Flash
     private void turnOnFlash() {
-        if (!isFlashOn) {
-            if (camera == null || param == null)    return;
-            param = camera.getParameters();
-            param.setFlashMode(Camera.Parameters.FLASH_MODE_TORCH);
-            camera.setParameters(param);
-            camera.startPreview();
-            isFlashOn = true;
-
-            Log.v("AndroidATC", "Flash has been turned on ...");
-
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                cameraManager.setTorchMode(cameraId, true);
+                isFlashOn = true;
+                Log.v("Verbose", "Flash has been turned on ...");
+            } else Log.v("Verbose", "Call requires API level 23");
+        } catch (Exception e) {
+            e.printStackTrace();
         }
+        Log.v("Verbose", "Flash has been turned on ...");
     }
 
     // Turning Off Flash
     private void turnOffFlash() {
-        if (!isFlashOn) {
-            if (camera == null || param == null)    return;
-            param = camera.getParameters();
-            param.setFlashMode(Camera.Parameters.FLASH_MODE_OFF);
-            camera.setParameters(param);
-            camera.stopPreview();
-            isFlashOn = false;
-
-            Log.v("AndroidATC", "Flash has been turned off ...");
-
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                cameraManager.setTorchMode(cameraId, false);
+                isFlashOn = false;
+                Log.v("Verbose", "Flash has been turned off ...");
+            } else Log.v("Verbose", "Call requires API level 23");
+        } catch (Exception e) {
+            e.printStackTrace();
         }
+        Log.v("Verbose", "Flash has been turned off ...");
     }
 
 
@@ -99,21 +102,28 @@ public class MainActivity extends AppCompatActivity {
     protected void onStart() {
         super.onStart();
         getCamera();
+        Log.v("Verbose", "onStart");
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (isFlashOn) turnOnFlash();
+        Log.v("Verbose", "onResume");
     }
 
     @Override
     protected void onStop() {
         super.onStop();
-        if (camera != null) {
-            camera.release();
-            camera = null;
-        }
+        if (isFlashOn) turnOffFlash();
+        Log.v("Verbose", "onStop");
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        turnOffFlash();
+        if (isFlashOn) turnOffFlash();
+        Log.v("Verbose", "onPause");
     }
 
 }
