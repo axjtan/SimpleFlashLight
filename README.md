@@ -12,8 +12,6 @@ Log.i (Info)   : Use this to post useful information to the log.
                  Use it to report successes. For example: successfully connected to a server.
                
 Log.d (Debug)  : Use this for debugging purposes.
-                 If you want to print out a bunch of messages so you can log the exact flow of your program, use this.
-                 If you want to keep a log of variable values, use this.
+                 Use this to log variable values and/or log exact flow of program.
                
-Log.v (Verbose): Use this when you want to go absolutely nuts with your logging.
-                 If for some reason you've decided to log every little thing in a particular part of your app, use the Log.v tag.
+Log.v (Verbose): Use this when want to log every single issue.
