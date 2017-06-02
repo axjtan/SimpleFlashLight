@@ -51,15 +51,22 @@ public class MainActivity extends AppCompatActivity {
         getCamera();
 
         ToggleButton flashSwitch = (ToggleButton) findViewById(R.id.flash_switch);
+
         flashSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if (isChecked) turnOnFlash();
-                else turnOffFlash();
+                if (isChecked) {
+                    turnOnFlash();
+                    isFlashOn = true;
+                } else {
+                    turnOffFlash();
+                    isFlashOn = false;
+                }
             }
         });
     }
 
+    // Set up Camera Manager
     private void getCamera() {
         cameraManager = (CameraManager) getSystemService(CAMERA_SERVICE);
         try {
@@ -74,13 +81,11 @@ public class MainActivity extends AppCompatActivity {
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 cameraManager.setTorchMode(cameraId, true);
-                isFlashOn = true;
-                Log.v("Verbose", "Flash has been turned on ...");
-            } else Log.v("Verbose", "Call requires API level 23");
+            } else Log.w("Stage", "Call requires API level 23");
         } catch (Exception e) {
             e.printStackTrace();
         }
-        Log.v("Verbose", "Flash has been turned on ...");
+        Log.i("Stage", "Flash has been turned on ...");
     }
 
     // Turning Off Flash
@@ -88,13 +93,11 @@ public class MainActivity extends AppCompatActivity {
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 cameraManager.setTorchMode(cameraId, false);
-                isFlashOn = false;
-                Log.v("Verbose", "Flash has been turned off ...");
-            } else Log.v("Verbose", "Call requires API level 23");
+            } else Log.w("Stage", "Call requires API level 23");
         } catch (Exception e) {
             e.printStackTrace();
         }
-        Log.v("Verbose", "Flash has been turned off ...");
+        Log.i("Stage", "Flash has been turned off ...");
     }
 
 
@@ -102,28 +105,28 @@ public class MainActivity extends AppCompatActivity {
     protected void onStart() {
         super.onStart();
         getCamera();
-        Log.v("Verbose", "onStart");
+        Log.i("Stage", "Start App");
     }
 
     @Override
     protected void onResume() {
         super.onResume();
         if (isFlashOn) turnOnFlash();
-        Log.v("Verbose", "onResume");
+        else turnOffFlash();
+        Log.i("Stage", "Resume program");
     }
 
     @Override
     protected void onStop() {
         super.onStop();
-        if (isFlashOn) turnOffFlash();
-        Log.v("Verbose", "onStop");
+        Log.i("Stage", "Stop App");
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        if (isFlashOn) turnOffFlash();
-        Log.v("Verbose", "onPause");
+        turnOffFlash();
+        Log.i("Stage", "Pause Program");
     }
 
 }
